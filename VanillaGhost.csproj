@@ -29,17 +29,20 @@
     <Optimize>true</Optimize>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="TerrariaServer">
-      <HintPath>..\..\..\Documents\TeamPointPvP\tshock_4.3.26\TerrariaServer.exe</HintPath>
-    </Reference>
-    <Reference Include="OTAPI">
-      <HintPath>..\..\..\Documents\TeamPointPvP\tshock_4.3.26\OTAPI.dll</HintPath>
+    <Reference Include="OTAPI, Version=1.3.5.3, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Documents\TShock4.4.0_Pre11_Terraria1.4.0.5\OTAPI.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <HintPath>C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System\v4.0_4.0.0.0__b77a5c561934e089\System.dll</HintPath>
     </Reference>
-    <Reference Include="TShockAPI">
-      <HintPath>..\..\..\Documents\TeamPointPvP\tshock_4.3.26\ServerPlugins\TShockAPI.dll</HintPath>
+    <Reference Include="TerrariaServer, Version=1.3.5.3, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Documents\TShock4.4.0_Pre11_Terraria1.4.0.5\TerrariaServer.exe</HintPath>
+    </Reference>
+    <Reference Include="TShockAPI, Version=4.3.26.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Documents\TShock4.4.0_Pre11_Terraria1.4.0.5\ServerPlugins\TShockAPI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

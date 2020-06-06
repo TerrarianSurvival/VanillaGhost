@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,8 +14,6 @@ namespace VanillaGhost
 	[ApiVersion(2, 1)]
 	public class GhostMain : TerrariaPlugin
 	{
-		private readonly long[] lastSendTick = new long[256];
-
 		public override string Author => "Miyabi";
 
 		public override string Description => "Allows tile send to ghost player.";
@@ -46,67 +45,139 @@ namespace VanillaGhost
 		private void OnGetData(GetDataEventArgs args)
 		{
 			// TshockではGhostへのタイル送信が行われないため、プレイヤーが移動するPlayerUpdateパケットで送信する
-			// 3秒に一度送る
 			if (!args.Handled
 				&& args.MsgID == PacketTypes.PlayerUpdate)
 			{
-				if (Main.player[args.Msg.whoAmI].ghost
-				    && Math.Abs(DateTime.Now.Ticks - lastSendTick[args.Msg.whoAmI]) > 30_000_000)
+				if (Main.player[args.Msg.whoAmI].ghost)				    
 				{
-					lastSendTick[args.Msg.whoAmI] = DateTime.Now.Ticks;
-					BinaryReader binaryReader = new BinaryReader(new MemoryStream(args.Msg.readBuffer, args.Index, args.Length));
-					int playerIndex = binaryReader.ReadByte();
+					BinaryReader reader = new BinaryReader(new MemoryStream(args.Msg.readBuffer, args.Index, args.Length));
+					int playerIndex = reader.ReadByte();
 					if (playerIndex != Main.myPlayer
 						|| Main.ServerSideCharacter)
 					{
 						// Update Player
 						Player player = Main.player[playerIndex];
-						_ = binaryReader.ReadByte();
-						_ = binaryReader.ReadByte();
-						player.selectedItem = binaryReader.ReadByte();
-						player.position = Terraria.Utils.ReadVector2(binaryReader);
 
-						RemoteClient.CheckSection(playerIndex, player.position);
-					}
-				}
-
-				if (Main.player[args.Msg.whoAmI].ghost
-					&& Math.Abs(DateTime.Now.Ticks - lastSendTick[args.Msg.whoAmI]) > 30_000_000)
-				{
-					lastSendTick[args.Msg.whoAmI] = DateTime.Now.Ticks;
-					BinaryReader binaryReader = new BinaryReader(new MemoryStream(args.Msg.readBuffer, args.Index, args.Length));
-					int playerIndex = binaryReader.ReadByte();
-					if (playerIndex != Main.myPlayer
-						|| Main.ServerSideCharacter)
-					{
-						// Update Player
-						Player player = Main.player[playerIndex];
-						_ = binaryReader.ReadByte();
-						_ = binaryReader.ReadByte();
-						player.selectedItem = binaryReader.ReadByte();
-						player.position = Terraria.Utils.ReadVector2(binaryReader);
+						BitsByte bitsByte10 = reader.ReadByte();
+						BitsByte bitsByte11 = reader.ReadByte();
+						BitsByte bitsByte12 = reader.ReadByte();
+						BitsByte bitsByte13 = reader.ReadByte();
+						player.controlUp = bitsByte10[0];
+						player.controlDown = bitsByte10[1];
+						player.controlLeft = bitsByte10[2];
+						player.controlRight = bitsByte10[3];
+						player.controlJump = bitsByte10[4];
+						player.controlUseItem = bitsByte10[5];
+						player.direction = (bitsByte10[6] ? 1 : (-1));
+						if (bitsByte11[0])
+						{
+							player.pulley = true;
+							player.pulleyDir = (byte)((!bitsByte11[1]) ? 1 : 2);
+						}
+						else
+						{
+							player.pulley = false;
+						}
+						player.vortexStealthActive = bitsByte11[3];
+						player.gravDir = (bitsByte11[4] ? 1 : (-1));
+						player.TryTogglingShield(bitsByte11[5]);
+						player.ghost = bitsByte11[6];
+						player.selectedItem = reader.ReadByte();
+						player.position = reader.ReadVector2();
+						if (bitsByte11[2])
+						{
+							player.velocity = reader.ReadVector2();
+						}
+						else
+						{
+							player.velocity = Vector2.Zero;
+						}
+						if (bitsByte12[6])
+						{
+							player.PotionOfReturnOriginalUsePosition = reader.ReadVector2();
+							player.PotionOfReturnHomePosition = reader.ReadVector2();
+						}
+						else
+						{
+							player.PotionOfReturnOriginalUsePosition = null;
+							player.PotionOfReturnHomePosition = null;
+						}
+						player.tryKeepingHoveringUp = bitsByte12[0];
+						player.IsVoidVaultEnabled = bitsByte12[1];
+						player.sitting.isSitting = bitsByte12[2];
+						player.downedDD2EventAnyDifficulty = bitsByte12[3];
+						player.isPettingAnimal = bitsByte12[4];
+						player.isTheAnimalBeingPetSmall = bitsByte12[5];
+						player.tryKeepingHoveringDown = bitsByte12[7];
+						player.sleeping.SetIsSleepingAndAdjustPlayerRotation(player, bitsByte13[0]);
 
 						RemoteClient.CheckSection(playerIndex, player.position);
 					}
 				}
 
 				// ひとまずGhostと同じ処理
-				// Main.UpdateServerでは全員にRemoteClient.CheckSectionしているが負荷的に大丈夫か？大丈夫ならタイマーを外す
-				if (!Main.player[args.Msg.whoAmI].active
-					&& Math.Abs(DateTime.Now.Ticks - lastSendTick[args.Msg.whoAmI]) > 30_000_000)
+				if (!Main.player[args.Msg.whoAmI].active)
 				{
-					lastSendTick[args.Msg.whoAmI] = DateTime.Now.Ticks;
-					BinaryReader binaryReader = new BinaryReader(new MemoryStream(args.Msg.readBuffer, args.Index, args.Length));
-					int playerIndex = binaryReader.ReadByte();
+					BinaryReader reader = new BinaryReader(new MemoryStream(args.Msg.readBuffer, args.Index, args.Length));
+					int playerIndex = reader.ReadByte();
 					if (playerIndex != Main.myPlayer
 						|| Main.ServerSideCharacter)
 					{
 						// Update Player
 						Player player = Main.player[playerIndex];
-						_ = binaryReader.ReadByte();
-						_ = binaryReader.ReadByte();
-						player.selectedItem = binaryReader.ReadByte();
-						player.position = Terraria.Utils.ReadVector2(binaryReader);
+
+						BitsByte bitsByte10 = reader.ReadByte();
+						BitsByte bitsByte11 = reader.ReadByte();
+						BitsByte bitsByte12 = reader.ReadByte();
+						BitsByte bitsByte13 = reader.ReadByte();
+						player.controlUp = bitsByte10[0];
+						player.controlDown = bitsByte10[1];
+						player.controlLeft = bitsByte10[2];
+						player.controlRight = bitsByte10[3];
+						player.controlJump = bitsByte10[4];
+						player.controlUseItem = bitsByte10[5];
+						player.direction = (bitsByte10[6] ? 1 : (-1));
+						if (bitsByte11[0])
+						{
+							player.pulley = true;
+							player.pulleyDir = (byte)((!bitsByte11[1]) ? 1 : 2);
+						}
+						else
+						{
+							player.pulley = false;
+						}
+						player.vortexStealthActive = bitsByte11[3];
+						player.gravDir = (bitsByte11[4] ? 1 : (-1));
+						player.TryTogglingShield(bitsByte11[5]);
+						player.ghost = bitsByte11[6];
+						player.selectedItem = reader.ReadByte();
+						player.position = reader.ReadVector2();
+						if (bitsByte11[2])
+						{
+							player.velocity = reader.ReadVector2();
+						}
+						else
+						{
+							player.velocity = Vector2.Zero;
+						}
+						if (bitsByte12[6])
+						{
+							player.PotionOfReturnOriginalUsePosition = reader.ReadVector2();
+							player.PotionOfReturnHomePosition = reader.ReadVector2();
+						}
+						else
+						{
+							player.PotionOfReturnOriginalUsePosition = null;
+							player.PotionOfReturnHomePosition = null;
+						}
+						player.tryKeepingHoveringUp = bitsByte12[0];
+						player.IsVoidVaultEnabled = bitsByte12[1];
+						player.sitting.isSitting = bitsByte12[2];
+						player.downedDD2EventAnyDifficulty = bitsByte12[3];
+						player.isPettingAnimal = bitsByte12[4];
+						player.isTheAnimalBeingPetSmall = bitsByte12[5];
+						player.tryKeepingHoveringDown = bitsByte12[7];
+						player.sleeping.SetIsSleepingAndAdjustPlayerRotation(player, bitsByte13[0]);
 
 						RemoteClient.CheckSection(playerIndex, player.position);
 					}
